@@ -7,7 +7,8 @@ const { query } = require('../lib/db');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const REG_LINK = process.env.REG_LINK || 'https://one-vv522.com/?p=ltw5';
-const BASE_URL = process.env.BASE_URL || 'https://euro54-bot.vercel.app';
+// Utilise VERCEL_URL (auto-détection du domaine Vercel) sinon BASE_URL, sinon fallback
+const BASE_URL = process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://euro54-bot.vercel.app');
 const MIN_DEPOSIT = parseFloat(process.env.MIN_DEPOSIT) || 8.5;
 const LINK_SECRET = process.env.ADMIN_PASSWORD || 'euro54secret';
 
@@ -113,7 +114,6 @@ async function deleteMsg(chatId, msgId) {
 async function sendPhoto(chatId, userId, img, text, btns, prevMsgId) {
     if (prevMsgId) {
         await deleteMsg(chatId, prevMsgId);
-        try { await deleteMsg(chatId, prevMsgId - 1); } catch (e) {}
     }
     const res = await tgAPI('sendPhoto', {
         chat_id: chatId, photo: img, caption: text,
@@ -210,6 +210,18 @@ async function sendVIPMessage(chatId, userId, currentMsgId) {
         try {
             await query('UPDATE users SET last_message_id = $1, updated_at = NOW() WHERE telegram_id = $2', [res.result.message_id, userId]);
         } catch (e) {}
+    } else {
+        // Fallback : si sendPhoto échoue, envoyer un message texte avec bouton web_app
+        console.error('[VIP] sendPhoto failed, trying sendMessage fallback:', JSON.stringify(res));
+        const fb = await tgAPI('sendMessage', {
+            chat_id: chatId,
+            text: M.access_granted,
+            parse_mode: 'HTML',
+            reply_markup: { inline_keyboard: vipButtons(userId) }
+        });
+        if (fb.ok) {
+            try { await query('UPDATE users SET last_message_id = $1, updated_at = NOW() WHERE telegram_id = $2', [fb.result.message_id, userId]); } catch (e) {}
+        }
     }
 }
 

@@ -5,7 +5,7 @@
 const crypto = require('crypto');
 const { query } = require('../lib/db');
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = process.env.BOT_TOKEN || '8450061309:AAEz2ApnHwd8XX1pcoK3NX8BL6pwVkk6fGU';
 const REG_LINK = process.env.REG_LINK || 'https://one-vv522.com/?p=ltw5';
 // Utilise VERCEL_URL (auto-détection du domaine Vercel) sinon BASE_URL, sinon fallback
 const BASE_URL = process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://euro54-bot.vercel.app');
